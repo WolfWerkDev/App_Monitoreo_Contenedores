@@ -1,0 +1,65 @@
+<!-- Card del contenedor -->
+<div class="relative w-40 h-64 mx-auto rounded-lg overflow-hidden border-4
+            transition-transform duration-500 transform hover:scale-105
+            {% if ultima_alerta and ultima_alerta.is_activa %}
+                border-red-600 shadow-lg animate-pulse
+            {% else %}
+                border-gray-400 dark:border-gray-600
+            {% endif %}">
+
+    <!-- Nivel dinámico -->
+    <div class="absolute bottom-0 left-0 w-full transition-all duration-700
+                {% if dispositivo.ultimo_nivel >= 75 %}
+                    bg-red-600
+                {% else %}
+                    bg-blue-500
+                {% endif %}"
+         style="--nivel: {{ dispositivo.ultimo_nivel|default_if_none:'0'|floatformat:0 }}%;"></div>
+
+    <!-- Texto del nivel -->
+    <div class="absolute inset-0 flex items-center justify-center text-gray-900 dark:text-white font-bold text-xl">
+        {{ dispositivo.ultimo_nivel|default_if_none:'0'|floatformat:0 }}%
+    </div>
+</div>
+
+<!-- Información adicional -->
+<div class="mt-6 space-y-2 text-center">
+    <p class="text-gray-700 dark:text-gray-300">
+        <strong>Estado de la puerta:</strong>
+        {% if dispositivo.estado_actual_puerta %}
+            <span class="text-green-600 font-semibold">Cerrada</span>
+        {% else %}
+            <span class="text-red-600 font-semibold">Abierta</span>
+        {% endif %}
+    </p>
+
+    <p class="text-gray-700 dark:text-gray-300">
+        <strong>Última actualización:</strong>
+        {% if dispositivo.ultima_fecha %}
+            {{ dispositivo.ultima_fecha|date:"d M Y, h:i a" }}
+        {% else %}
+            -
+        {% endif %}
+    </p>
+</div>
+
+<!-- Recuadro de alertas -->
+{% if ultima_alerta and ultima_alerta.is_activa %}
+<div class="mt-4 p-4 border-2 border-red-600 rounded-lg bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 animate-pulse shadow-md">
+    <h3 class="font-bold mb-2 text-center">Última alerta</h3>
+    <p>
+        <span class="font-semibold">{{ ultima_alerta.fecha_alerta|date:"d M Y, h:i a" }}</span>
+    </p>
+    <p class="font-bold">
+        {{ ultima_alerta.mensaje }}
+    </p>
+</div>
+{% endif %}
+
+<!-- CSS para controlar la altura de la barra -->
+<style>
+div[style*="--nivel"] {
+    height: var(--nivel);
+    transition: height 0.7s;
+}
+</style>

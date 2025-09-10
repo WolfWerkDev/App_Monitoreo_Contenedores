@@ -1,0 +1,96 @@
+<div id="report-results" class="p-4 bg-white dark:bg-gray-800 rounded shadow">
+  {% if reportes or dispositivos %}
+
+  {% if reportes %}
+  <h2 class="text-lg font-bold mb-2 text-gray-800 dark:text-gray-100">Resultados</h2>
+  <p class="mb-4 text-gray-700 dark:text-gray-300">
+    Total de reportes encontrados: {{ reportes.paginator.count }}
+  </p>
+  <ul class="space-y-4">
+    {% for reporte in reportes %}
+    <li class="p-3 border rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+      <strong>Dispositivo:</strong> {{ reporte.dispositivo.device_name }} <br>
+      <strong>Medición Nivel:</strong> {{ reporte.medicion_nivel }}% <br>
+      <strong>Estado Puerta:</strong> {% if reporte.estado_puerta %}Cerrada{% else %}Abierta{% endif %} <br>
+      <strong>Fecha:</strong> {{ reporte.fecha }} <br>
+
+      {% if reporte.alertas.all %}
+      <div class="mt-2 pl-4 border-l-2 border-gray-300 dark:border-gray-500">
+        <strong>Alertas:</strong>
+        <ul class="mt-1 space-y-1">
+          {% for alerta in reporte.alertas.all %}
+          <li class="px-2 py-1 rounded
+                       {% if alerta.is_activa %}
+                         bg-red-100 text-red-700 dark:bg-red-700 dark:text-red-100
+                       {% else %}
+                         bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100
+                       {% endif %}">
+            {{ alerta.mensaje }}
+            {% if alerta.is_activa %}
+              (Activa) - {{ alerta.fecha_alerta }}
+            {% else %}
+              (Desactivada) - {{ alerta.fecha_alerta }}<br>
+              <small class="text-sm text-gray-600 dark:text-gray-300">
+                Fecha de desactivación: {{ alerta.fecha_desactivada }}
+              </small>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- Controles de paginación -->
+  <div class="mt-4 flex justify-center space-x-2">
+    {% comment %}
+      Construimos la querystring SIN el parámetro 'page' y luego añadimos la nueva página.
+      Importante: usamos hx-include="#report-form" para que HTMX envíe también los filtros del formulario.
+    {% endcomment %}
+
+    {% if reportes.has_previous %}
+      <button type="button"
+        hx-get="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ reportes.previous_page_number }}"
+        hx-target="#report-results"
+        hx-swap="innerHTML"
+        hx-include="#report-form"
+        class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded">
+        Anterior
+      </button>
+    {% endif %}
+
+    <span class="px-3 py-1 bg-gray-300 dark:bg-gray-500 rounded">
+      Página {{ reportes.number }} de {{ reportes.paginator.num_pages }}
+    </span>
+
+    {% if reportes.has_next %}
+      <button type="button"
+        hx-get="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ reportes.next_page_number }}"
+        hx-target="#report-results"
+        hx-swap="innerHTML"
+        hx-include="#report-form"
+        class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded">
+        Siguiente
+      </button>
+    {% endif %}
+  </div>
+
+  {% endif %} {# <-- Cierra el if reportes #}
+
+  {% if dispositivos %}
+  <div class="mt-6 p-3 bg-gray-100 dark:bg-gray-700 rounded">
+    <h3 class="font-bold text-gray-800 dark:text-gray-100 mb-2">Dispositivos:</h3>
+    <ul class="list-disc pl-5 text-gray-700 dark:text-gray-300">
+      {% for disp in dispositivos %}
+      <li>{{ disp.device_name }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <p class="text-gray-600 dark:text-gray-300">No se encontraron resultados.</p>
+  {% endif %}
+</div>

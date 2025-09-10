@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Overlay superior solo en móvil -->
+<div class="fixed top-0 left-0 w-full h-20 bg-black/20 sm:hidden z-10"></div>
+
+<div class="flex min-h-screen w-full" x-data="{ open: false }" id="dashboard-root">
+
+  <!-- Sidebar -->
+  <div class="bg-blue-600 dark:bg-blue-800 text-white transition-all duration-300
+           fixed top-0 left-0 h-full z-50 sm:relative sm:block sm:h-auto" :class="{
+      'w-64': open && window.innerWidth >= 640,
+      'w-16': !open && window.innerWidth >= 640,
+      'w-[90%]': open && window.innerWidth < 640,
+      'hidden': !open && window.innerWidth < 640
+    }">
+    <!-- Header Sidebar -->
+    <div class="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 
+            h-20 sm:h-auto p-4">
+      <h2 class="text-lg font-bold text-gray-100 dark:text-gray-100" x-show="open">Menú</h2>
+      <button @click="open = !open" class="text-white-600 dark:text-gray-200 focus:outline-none 
+                 hover:text-gray-800 dark:hover:text-gray-100 
+                 transform hover:scale-110 transition-transform duration-200">
+        ☰
+      </button>
+    </div>
+
+
+    <nav class="mt-4">
+      <ul>
+        <li>
+          <a href="{% url 'dashboard' %}"
+            class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+            📊 <span x-show="open" class="ml-2">Dashboard</span>
+          </a>
+        </li>
+        <li>
+
+        <li>
+          <a href="{% url 'report_index' %}"
+            class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+            📑 <span x-show="open" class="ml-2">Reportes</span>
+          </a>
+        </li>
+        <li>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"
+              class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+              🔒 <span x-show="open" class="ml-2">Cerrar sesión</span>
+            </button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Botón móvil para abrir Sidebar -->
+  <!-- Botón móvil para abrir/cerrar drawer -->
+  <!-- Botón móvil que solo aparece cuando el menú está cerrado -->
+<button @click="open = true" 
+  x-show="!open" 
+  class="fixed top-0 left-0 z-30 flex items-center justify-center 
+         w-20 h-20 text-4xl 
+         text-white dark:text-gray-200 
+         bg-transparent sm:hidden">
+  ☰
+</button>
+
+
+
+
+
+  <!-- Contenido principal -->
+  <div class="flex-1 p-8 bg-stone-100 dark:bg-gray-900 sm:ml-0 m-0 md:m-8"
+    :class="{ 'opacity-50 pointer-events-none': open && window.innerWidth < 640 }">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Hola {{ request.user.first_name_only }}, bienvenido.</h1>
+    <p class="text-gray-700 dark:text-gray-300"><strong>Dashboard</strong>. Aquí encontrará la información sobre los contenedores.</p>
+
+    <div id="contenedores" hx-get="{% url 'dashboard_partial' %}" hx-trigger="every 5s" hx-target="#contenedores-inner"
+      hx-swap="innerHTML" class="flex flex-wrap gap-6 mt-10">
+      <div id="contenedores-inner" class="flex flex-wrap gap-6">
+        {% include "dashboard/dashboard_partial.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Audio oculto -->
+<audio id="alert-sound" src="{% static 'sounds/alerta-sonido.mp3' %}" preload="auto"></audio>
+
+<!-- Alpine.js y HTMX -->
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let audioUnlocked = false;
+    let nivelesPrevios = JSON.parse(localStorage.getItem("nivelesPrevios") || "{}");
+
+    document.getElementById("dashboard-root").addEventListener("click", function () {
+      if (!audioUnlocked) {
+        const audio = document.getElementById("alert-sound");
+        audio.play().catch(() => { });
+        audio.pause();
+        audio.currentTime = 0;
+        audioUnlocked = true;
+      }
+    });
+
+    function checkNivel() {
+      document.querySelectorAll(".bg-gray-200").forEach(card => {
+        const deviceId = card.dataset.deviceId;
+        const nivelSpan = card.querySelector("span");
+        const nivel = parseInt(nivelSpan.innerText.replace("%", "")) || 0;
+        const nivelPrevio = nivelesPrevios[deviceId] || 0;
+
+        if (nivelPrevio < 75 && nivel >= 75) {
+          document.getElementById("alert-sound").play().catch(() => { });
+        }
+
+        nivelesPrevios[deviceId] = nivel;
+      });
+
+      localStorage.setItem("nivelesPrevios", JSON.stringify(nivelesPrevios));
+    }
+
+    checkNivel();
+
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      if (evt.target.id === "contenedores-inner") {
+        checkNivel();
+      }
+    });
+  });
+</script>
+{% endblock %}

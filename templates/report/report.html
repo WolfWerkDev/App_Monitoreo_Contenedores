@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<div class="fixed top-0 left-0 w-full h-20 bg-black/20 sm:hidden z-10"></div>
+
+<div class="flex min-h-screen w-full" x-data="{ open: false }" id="dashboard-root">
+
+  <!-- Sidebar (NO TOCADA) -->
+  <div class="bg-blue-600 dark:bg-blue-800 text-white transition-all duration-300
+           fixed top-0 left-0 h-full z-50 sm:relative sm:block sm:h-auto" :class="{
+      'w-64': open && window.innerWidth >= 640,
+      'w-16': !open && window.innerWidth >= 640,
+      'w-[90%]': open && window.innerWidth < 640,
+      'hidden': !open && window.innerWidth < 640
+    }">
+    <!-- Header Sidebar -->
+    <div class="flex items-center justify-between border-b border-gray-300 dark:border-gray-700 
+            h-20 sm:h-auto p-4">
+      <h2 class="text-lg font-bold text-gray-100 dark:text-gray-100" x-show="open">Menú</h2>
+      <button @click="open = !open" class="text-white-600 dark:text-gray-200 focus:outline-none 
+                 hover:text-gray-800 dark:hover:text-gray-100 
+                 transform hover:scale-110 transition-transform duration-200">
+        ☰
+      </button>
+    </div>
+
+    <nav class="mt-4">
+      <ul>
+        <li>
+          <a href="{% url 'dashboard' %}"
+            class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+            📊 <span x-show="open" class="ml-2">Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'report_index' %}"
+            class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+            📑 <span x-show="open" class="ml-2">Reportes</span>
+          </a>
+        </li>
+        <li>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"
+              class="flex items-center p-3 text-gray-100 dark:text-gray-200 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-700 rounded transition transform hover:scale-105 duration-200">
+              🔒 <span x-show="open" class="ml-2">Cerrar sesión</span>
+            </button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Botón móvil para abrir Sidebar -->
+  <button @click="open = true" 
+    x-show="!open" 
+    class="fixed top-0 left-0 z-30 flex items-center justify-center 
+           w-20 h-20 text-4xl 
+           text-white dark:text-gray-200 
+           bg-transparent sm:hidden">
+    ☰
+  </button>
+
+  <!-- Contenido principal -->
+  <main class="flex-1 flex flex-col m-0 md:m-8">
+    
+    <!-- Cabecera de filtros -->
+    <section class="p-6 border-b bg-gray-50 dark:bg-gray-900">
+      <h1 class="text-2xl font-bold mb-2">Reportes</h1>
+      <p class="mb-4 text-gray-700 dark:text-gray-300">Seleccione los filtros que desea aplicar para generar el informe:</p>
+
+      <!-- FORM BUSCAR (HTMX) -->
+      <form id="report-form"
+            method="POST" 
+            hx-post="{% url 'report_index' %}" 
+            hx-target="#report-results" 
+            hx-swap="innerHTML"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+        {% csrf_token %}
+        
+        <!-- CAMPOS DEL FORMULARIO -->
+        <div>
+          <label for="{{ form.dispositivos.id_for_label }}" class="block font-medium mb-1">Contenedor</label>
+          {{ form.dispositivos|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div>
+          <label for="{{ form.tipo_informe.id_for_label }}" class="block font-medium mb-1">Tipo de informe</label>
+          {{ form.tipo_informe|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div id="estado-container" style="display: none;">
+          <label for="{{ form.estado_alerta.id_for_label }}" class="block font-medium mb-1" ><strong>*Estado de la alerta</strong></label>
+          {{ form.estado_alerta |add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div>
+          <label for="{{ form.de_fecha.id_for_label }}" class="block font-medium mb-1">De fecha</label>
+          {{ form.de_fecha|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div>
+          <label for="{{ form.fecha.id_for_label }}" class="block font-medium mb-1">Fecha</label>
+          {{ form.fecha|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div id="de-hora-container" style="display: none;">
+          <label for="{{ form.de_hora.id_for_label }}" class="block font-medium mb-1">De hora</label>
+          {{ form.de_hora|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div id="hora1-container" style="display: none;">
+          <label for="{{ form.hora1.id_for_label }}" class="block font-medium mb-1">Hora</label>
+          {{ form.hora1|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <div id="hora2-container" style="display: none;">
+          <label for="{{ form.hora2.id_for_label }}" class="block font-medium mb-1">Segunda hora</label>
+          {{ form.hora2|add_class:"w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" }}
+        </div>
+
+        <!-- BOTONES -->
+        <div class="col-span-full flex space-x-2 mt-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow">
+            Buscar
+          </button>
+          <button type="reset" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded shadow">
+            Eliminar
+          </button>
+        </div>
+      </form>
+      <!-- FIN FORM BUSCAR -->
+
+            <!-- FORM GENERAR PDF -->
+      <form method="POST" action="{% url 'generar_pdf' %}" target="_blank" id="pdf-form" class="mt-4">
+          {% csrf_token %}
+          <!-- Hidden inputs para los filtros actuales -->
+          <input type="hidden" name="dispositivos" id="pdf_dispositivos">
+          <input type="hidden" name="tipo_informe" id="pdf_tipo_informe">
+          <input type="hidden" name="estado_alerta" id="pdf_estado_alerta">
+          <input type="hidden" name="de_fecha" id="pdf_de_fecha">
+          <input type="hidden" name="fecha" id="pdf_fecha">
+          <input type="hidden" name="de_hora" id="pdf_de_hora">
+          <input type="hidden" name="hora1" id="pdf_hora1">
+          <input type="hidden" name="hora2" id="pdf_hora2">
+          <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded shadow">
+              Generar PDF
+          </button>
+      </form>
+
+
+      <!-- FIN CAMBIO -->
+
+    </section>
+
+    <!-- Contenido dinámico / resultados -->
+    <section class="flex-1 p-6" id="report-results">
+      <!-- Aquí se cargará el partial report_partial.html -->
+      <p class="text-gray-600 dark:text-gray-300">Aquí se mostrarán los resultados de la búsqueda.</p>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+<script>
+    const deHora = document.getElementById("id_de_hora");
+    const deHoraContainer = document.getElementById("de-hora-container");
+    const hora1Container = document.getElementById("hora1-container");
+    const hora2Container = document.getElementById("hora2-container");
+    const resetBtn = document.querySelector("button[type='reset']");
+    const tipoInforme = document.getElementById("id_tipo_informe")
+    const estadoAlertaContainer = document.getElementById("estado-container")
+    const deFechaContainer = document.getElementById("id_de_fecha");
+
+    deFechaContainer.addEventListener("change", function() {
+        if (this.value === "en") {
+            deHoraContainer.style.display = "block";
+            hora1Container.style.display = "block";
+        } else {
+            deHoraContainer.style.display = "none";
+            hora1Container.style.display = "none";
+        }
+    });
+
+    deHora.addEventListener("change", function() {
+        if (this.value === "entre") {
+            hora2Container.style.display = "block";
+        } else {
+            hora2Container.style.display = "none";
+        }
+    });
+
+    resetBtn.addEventListener("click", function() {
+        hora2Container.style.display = "none";
+        estadoAlertaContainer.style.display = "none";
+        deHoraContainer.style.display = "none";
+        hora1Container.style.display = "none";
+    });
+
+    tipoInforme.addEventListener("change", function() {
+        if (this.value === "alerta") {
+          estadoAlertaContainer.style.display = "block";
+        } else {
+          estadoAlertaContainer.style.display = "none";
+        }
+    });
+
+
+
+    // Función que copia los valores del form de búsqueda al form PDF
+    function actualizarPDFForm() {
+        document.getElementById("pdf_dispositivos").value = document.getElementById("id_dispositivos").value;
+        document.getElementById("pdf_tipo_informe").value = document.getElementById("id_tipo_informe").value;
+        document.getElementById("pdf_estado_alerta").value = document.getElementById("id_estado_alerta").value;
+        document.getElementById("pdf_de_fecha").value = document.getElementById("id_de_fecha").value;
+        document.getElementById("pdf_fecha").value = document.getElementById("id_fecha").value;
+        document.getElementById("pdf_de_hora").value = document.getElementById("id_de_hora").value;
+        document.getElementById("pdf_hora1").value = document.getElementById("id_hora1").value;
+        document.getElementById("pdf_hora2").value = document.getElementById("id_hora2").value;
+    }
+
+    // Actualizar los hidden inputs cada vez que se hace click en generar PDF
+    document.getElementById("pdf-form").addEventListener("submit", actualizarPDFForm);
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es" class="transition-colors duration-300">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}App Monitoreo{% endblock %}</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    /* MUY IMPORTANTE: activar dark mode por clase */
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+
+<body class="bg-stone-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+  <!-- Toggle tema fijo en esquina superior derecha -->
+  <button id="theme-toggle" 
+    class="fixed top-4 z-50 rounded-full w-12 h-12 flex items-center justify-center 
+           shadow bg-white/80 backdrop-blur border border-gray-200
+           hover:bg-white
+           dark:bg-gray-800/80 dark:border-gray-700 dark:hover:bg-gray-800
+           right-0 -translate-x-1/2
+           sm:right-4 sm:left-auto sm:translate-x-0"
+    aria-label="Cambiar tema">
+    🌙
+  </button>
+
+  <!-- Navbar opcional -->
+  <nav id="navBar" class="w-full h-20 bg-blue-600 dark:bg-blue-800 text-white flex items-center z-50">
+    <div class="max-w-6xl w-full px-4 font-semibold text-center sm:text-left z-50">
+      App Monitoreo
+    </div>
+  </nav>
+
+  <main class="max-w-0xl mx-auto px-0 py-0">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer sencillo -->
+  <footer class="w-full bottom-0 bg-transparent dark:bg-transparent dark:text-white text-gray-900 py-4">
+    <div class="max-w-6xl mx-auto text-center text-sm">
+      © 2025 App Monitoreo. Todos los derechos reservados.
+    </div>
+  </footer>
+
+  <script>
+    // Persistir preferencia en localStorage y alternar clase 'dark' en <html>
+    const btn = document.getElementById("theme-toggle");
+    const root = document.documentElement;
+
+    // Cargar preferencia guardada
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") root.classList.add("dark");
+    if (saved === "light") root.classList.remove("dark");
+
+    // Icono según estado actual
+    const setIcon = () => btn.textContent = root.classList.contains("dark") ? "☀️" : "🌙";
+    setIcon();
+
+    btn.addEventListener("click", () => {
+      const isDark = root.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      setIcon();
+    });
+  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</body>
+
+</html>

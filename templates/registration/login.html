@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center h-[calc(90vh-5rem)] bg-gray-50 dark:bg-gray-900 px-4">
+  <div class="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
+
+    <h1 class="text-center mb-6 text-gray-800 dark:text-gray-100 font-bold text-3xl">
+      <span class="inline-block transform -rotate-6 mr-2 text-blue-500">🔑</span>
+      Iniciar sesión
+    </h1>
+
+    {% if error %}
+      <div class="mb-6 rounded-lg bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 px-4 py-3 text-center text-base">
+        ⚠️ {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+
+      <div>
+        <label for="{{ form.email.id_for_label }}" class="block mb-1 text-gray-700 dark:text-gray-200 text-base">Correo electrónico</label>
+        {{ form.email|add_class:"login-input mt-1 block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" }}
+      </div>
+
+      <div>
+        <label for="{{ form.password.id_for_label }}" class="block mb-1 text-gray-700 dark:text-gray-200 text-base">Contraseña</label>
+        {{ form.password|add_class:"login-input mt-1 block w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none" }}
+      </div>
+
+      <button type="submit" class="login-button w-full py-3 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-600 font-semibold rounded-lg transition-colors text-base">
+        Ingresar
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
