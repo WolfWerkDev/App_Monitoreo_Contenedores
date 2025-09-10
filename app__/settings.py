@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'widget_tweaks',
-    'django.contrib.staticfiles',
 
     # Apps personalizadas
     "login", 
