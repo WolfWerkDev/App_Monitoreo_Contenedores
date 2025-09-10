@@ -87,7 +87,7 @@ El sistema está diseñado para:
 ## Instalación rápida
 
 ```bash
-git clone https://github.com/usuario/app-monitoreo-iot.git
+git clone https://github.com/WolfWerkDev/App_Monitoreo_Contenedores.git
 cd app-monitoreo-iot
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
