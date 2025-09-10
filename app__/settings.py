@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -80,14 +82,9 @@ WSGI_APPLICATION = 'app__.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'app_monitoreo_contenedores',       # El nombre que creaste en pgAdmin
-        'USER': 'postgres',             # Usuario con permisos sobre la DB
-        'PASSWORD': 'admin1234',      # Contraseña del usuario
-        'HOST': 'localhost',              # Si pg está en tu máquina local
-        'PORT': '5432',                   # Puerto por defecto
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL')  # Render suele crear esta variable de entorno
+    )
 }
 
 
