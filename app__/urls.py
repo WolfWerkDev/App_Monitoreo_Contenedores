@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
+from login.views import home
 
 urlpatterns = [
+    path('', home, name='home'),  # raíz redirige al login
     path('admin/', admin.site.urls),
     path('admin/login/', admin.site.login, name='admin_login'),
     path('admin/logout/', auth_views.LogoutView.as_view(next_page='/admin/login/'), name='admin_logout'),

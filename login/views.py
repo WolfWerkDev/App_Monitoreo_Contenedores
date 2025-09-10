@@ -28,3 +28,8 @@ def login(request):
 
     # Renderiza el template de login con el formulario (vacío o con errores)
     return render(request, "registration/login.html", {"form": form})
+
+
+def home(request):
+    # Redirige siempre al login
+    return redirect('/login/')
