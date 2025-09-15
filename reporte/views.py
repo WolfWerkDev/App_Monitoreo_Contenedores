@@ -179,6 +179,7 @@ def get_all_alerts(estado_alerta="todas", de_fecha=None, fecha=None, de_hora=Non
 # =========================================================
 # GENERACIÓN DE PDF
 # =========================================================
+#BREAKPOINT #2----------------------
 @login_required
 def generar_pdf(request):
     """Genera un PDF con los reportes o alertas según filtros"""
@@ -208,23 +209,13 @@ def generar_pdf(request):
         campo_principal = "Campo"
         tipo_titulo = "Información"
 
+    # --- AJUSTE PRINCIPAL ---
     if dispositivo == "all":
-        reportes_existentes = (
+        reportes = (
             get_all_reports(de_fecha, fecha, de_hora, hora1, hora2)
             if tipo_informe == "reporte"
             else get_all_alerts(estado_alerta, de_fecha, fecha, de_hora, hora1, hora2)
         ) or []
-        dispositivos = all_devices()
-        todos_reportes = []
-        for d in dispositivos:
-            r_dispositivo = [r for r in reportes_existentes if r.dispositivo == d]
-            if r_dispositivo:
-                todos_reportes.extend(r_dispositivo)
-            else:
-                class TempR:
-                    dispositivo = d
-                todos_reportes.append(TempR())
-        reportes = todos_reportes
         nombre_titulo = f"Informe-{tipo_titulo}-General"
     else:
         nombre_device = obtener_nombre_device(contenedor)
