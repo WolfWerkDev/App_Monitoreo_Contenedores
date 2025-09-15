@@ -222,7 +222,7 @@ def generar_pdf(request):
                 todos_reportes.extend(r_dispositivo)
             else:
                 class TempR:
-                    dispositivo = d  # Solo lo estrictamente necesario
+                    dispositivo = d
                 todos_reportes.append(TempR())
         reportes = todos_reportes
         nombre_titulo = f"Informe-{tipo_titulo}-General"
@@ -277,7 +277,7 @@ def generar_pdf(request):
             if not getattr(r, 'estado_puerta', False):
                 apertura_puerta += 1
 
-            # --- CORRECCIÓN: Manejar objetos sin fecha ---
+            # Manejar objetos sin fecha
             fecha_attr = getattr(r, 'fecha', None)
             if fecha_attr:
                 fecha_local = timezone.localtime(fecha_attr)
@@ -295,27 +295,25 @@ def generar_pdf(request):
 
             if hasattr(r, 'alertas') and getattr(r.alertas, 'exists', lambda: False)():
                 for a in r.alertas.all():
-                    fecha_off = timezone.localtime(getattr(a, 'fecha_desactivada'))
-                    fecha_local = timezone.localtime(getattr(a, 'fecha_alerta'))
+                    fecha_off = getattr(a, 'fecha_desactivada', None)
+                    fecha_alerta = getattr(a, 'fecha_alerta', None)
+
+                    fecha_alerta_str = timezone.localtime(fecha_alerta).strftime('%Y-%m-%d %H:%M:%S') if fecha_alerta else "N/A"
+                    fecha_off_str = timezone.localtime(fecha_off).strftime('%Y-%m-%d %H:%M:%S') if fecha_off else "N/A"
+
                     estado = "Activa" if getattr(a, 'is_activa', False) else "Desactivada"
-
-                    fecha_alerta_str = fecha_local.strftime('%Y-%m-%d %H:%M:%S')
-                    fecha_off_str = fecha_off.strftime('%Y-%m-%d %H:%M:%S') if not getattr(a, 'is_activa') else "N/A"
-
                     mensaje = f"{getattr(a, 'mensaje', '')} - {fecha_alerta_str}"
-                    data.append([f"Alerta ({estado})", mensaje])
-                    if not getattr(a, 'is_activa'):
-                        data.append([f"Fecha desactivación", fecha_off_str])
 
+                    data.append([f"Alerta ({estado})", mensaje])
+                    if estado == "Desactivada":
+                        data.append([f"Fecha desactivación", fecha_off_str])
                     if estado == "Activa":
                         alertas_activas = True
 
-                    fecha_inicio = getattr(a, 'fecha_alerta', None)
-                    fecha_fin = getattr(a, 'fecha_desactivada', None)
-                    if fecha_inicio and fecha_fin:
-                        duracion_alertas.append((fecha_fin - fecha_inicio).total_seconds())
+                    if fecha_alerta and fecha_off:
+                        duracion_alertas.append((fecha_off - fecha_alerta).total_seconds())
 
-            # --- Resto del PDF (tabla, estilo, totales) sin cambios ---
+            # Tabla y estilo
             col_widths = [100, width - 200]
             table = Table(data, colWidths=col_widths)
             style = TableStyle([
@@ -359,7 +357,7 @@ def generar_pdf(request):
         pdf.drawString(50, y, "Totales Generales:")
         y -= 15
 
-        promedio_nivel = suma_nivel / count_nivel if count_nivel > 0 else 0
+        promedio_nivel = suma_nivel / count_nivel if count_nivel else 0
         promedio_alertas_min = (sum(duracion_alertas)/len(duracion_alertas)/60) if duracion_alertas else 0
 
         pdf.setFont("Helvetica", 11)
