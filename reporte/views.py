@@ -296,6 +296,8 @@ def generar_pdf(request):
                     fecha_local = timezone.localtime(getattr(a, 'fecha_alerta'))
                     estado = "Activa" if getattr(a, 'is_activa', False) else "Desactivada"
                     mensaje = f"{getattr(a, 'mensaje', '')} - {fecha_local.strftime("%Y-%m-%d %H:%M:%S")}"
+                    fecha_off = timezone.localtime(getattr(a, 'fecha_desactivada'))
+                    if estado != "Activa": data.append([f"Alerta ({estado})", mensaje, " - Fecha desactivación: ", {fecha_off}])
                     data.append([f"Alerta ({estado})", mensaje])
                     if estado == "Activa":
                         alertas_activas = True
