@@ -298,10 +298,11 @@ def generar_pdf(request):
                     estado = "Activa" if getattr(a, 'is_activa', False) else "Desactivada"
 
                     fecha_alerta_str = fecha_local.strftime('%Y-%m-%d %H:%M:%S')
-                    fecha_off_str = fecha_off.strftime('%Y-%m-%d %H:%M:%S') if getattr(a, 'is_activa') else "N/A"
+                    fecha_off_str = fecha_off.strftime('%Y-%m-%d %H:%M:%S') if not getattr(a, 'is_activa') else "N/A"
 
-                    mensaje = f"{getattr(a, 'mensaje', '')} - {fecha_alerta_str} - Fecha desactivación: {fecha_off_str}"
+                    mensaje = f"{getattr(a, 'mensaje', '')} - {fecha_alerta_str}"
                     data.append([f"Alerta ({estado})", mensaje])
+                    if getattr(a, 'is_activa'): data.append([f"Fecha desactivación: ", fecha_off_str])
 
                     if estado == "Activa":
                         alertas_activas = True
