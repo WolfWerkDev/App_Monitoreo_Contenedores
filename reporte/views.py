@@ -281,12 +281,14 @@ def generar_pdf(request):
             if not getattr(r, 'estado_puerta', False):
                 apertura_puerta += 1
 
+            fecha_local = timezone.localtime(getattr(r, 'fecha'))
+
             data = [
                 [f"{idx}. {campo_principal}", "Valor"],
                 ["Dispositivo", device_name],
                 ["Medición Nivel", f"{nivel}%"],
                 ["Estado Puerta", "Cerrada" if getattr(r, 'estado_puerta', False) else "Abierta"],
-                ["Fecha", getattr(r, 'fecha', 'N/A')]
+                ["Fecha", fecha_local.strftime("%Y-%m-%d %H:%M:%S")]
             ]
 
             if hasattr(r, 'alertas') and getattr(r.alertas, 'exists', lambda: False)():
