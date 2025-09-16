@@ -27,3 +27,5 @@ ENV/
 
 # Windows
 Thumbs.db
+
+backups/*.json
