@@ -8,10 +8,10 @@ from django.views.decorators.csrf import csrf_exempt  # Para eximir CSRF en endp
 from django.contrib.auth import logout  # Para cerrar sesión
 from django.contrib.auth.decorators import login_required  # Para proteger vistas con login
 from django.views.decorators.cache import never_cache  # Para evitar cache de la vista
-from datetime import timedelta
+from datetime import timedelta, date
 
-# Vista principal del dashboard, protegida por login y sin cache
-from datetime import timedelta
+hoy = date.today()
+
 
 @login_required
 @never_cache
