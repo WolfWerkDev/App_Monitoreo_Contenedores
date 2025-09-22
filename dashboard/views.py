@@ -99,7 +99,7 @@ def dashboard_partial(request):
         else:
             d.tiempo_atencion_dia = None
 
-    return render(request, "dashboard/dashboard.html", {"dispositivos": dispositivos})
+    return render(request, "dashboard/dashboard_partial.html", {"dispositivos": dispositivos})
 
 
 # Endpoint para recibir información enviada desde el ESP32
