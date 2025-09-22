@@ -8,33 +8,56 @@ from django.views.decorators.csrf import csrf_exempt  # Para eximir CSRF en endp
 from django.contrib.auth import logout  # Para cerrar sesión
 from django.contrib.auth.decorators import login_required  # Para proteger vistas con login
 from django.views.decorators.cache import never_cache  # Para evitar cache de la vista
+from datetime import timedelta
 
 # Vista principal del dashboard, protegida por login y sin cache
+from datetime import timedelta
+
 @login_required
 @never_cache
 def dashboard(request):
-    # Anota cada dispositivo con los últimos valores de nivel, fecha y estado de puerta
     dispositivos = Dispositivo.objects.annotate(
         ultimo_nivel=Subquery(
             Reporte.objects.filter(dispositivo=OuterRef("pk"))
             .order_by("-fecha")
-            .values("medicion_nivel")[:1]  # Último nivel medido
+            .values("medicion_nivel")[:1]
         ),
         ultima_fecha=Subquery(
             Reporte.objects.filter(dispositivo=OuterRef("pk"))
             .order_by("-fecha")
-            .values("fecha")[:1]  # Fecha del último reporte
+            .values("fecha")[:1]
         ),
-        estado_puerta=Subquery(
+        estado_actual_puerta=Subquery(
             Reporte.objects.filter(dispositivo=OuterRef("pk"))
             .order_by("-fecha")
-            .values("estado_puerta")[:1]  # Estado de puerta del último reporte
+            .values("estado_puerta")[:1]
         ),
     )
-    # Renderiza el template principal con los dispositivos anotados
+
+    hoy = now().date()
+    for d in dispositivos:
+        alertas_cerradas = Alerta.objects.filter(
+            reporte__dispositivo=d, is_activa=False, fecha_desactivada__isnull=False
+        )
+        # --- Promedio total ---
+        tiempos = [(a.fecha_desactivada - a.fecha_alerta).total_seconds()/60 for a in alertas_cerradas]
+        if tiempos:
+            total_seconds = int((sum(tiempos)/len(tiempos)) * 60)
+            d.tiempo_atencion = str(timedelta(seconds=total_seconds))
+        else:
+            d.tiempo_atencion = None
+
+        # --- Promedio diario ---
+        alertas_hoy = alertas_cerradas.filter(fecha_alerta__date=hoy)
+        tiempos_hoy = [(a.fecha_desactivada - a.fecha_alerta).total_seconds()/60 for a in alertas_hoy]
+        if tiempos_hoy:
+            total_seconds_hoy = int((sum(tiempos_hoy)/len(tiempos_hoy)) * 60)
+            d.tiempo_atencion_dia = str(timedelta(seconds=total_seconds_hoy))
+        else:
+            d.tiempo_atencion_dia = None
+
     return render(request, "dashboard/dashboard.html", {"dispositivos": dispositivos})
 
-# Vista parcial del dashboard para actualizaciones parciales (AJAX)
 @login_required
 def dashboard_partial(request):
     dispositivos = Dispositivo.objects.annotate(
@@ -48,8 +71,36 @@ def dashboard_partial(request):
             .order_by("-fecha")
             .values("fecha")[:1]
         ),
+        estado_actual_puerta=Subquery(
+            Reporte.objects.filter(dispositivo=OuterRef("pk"))
+            .order_by("-fecha")
+            .values("estado_puerta")[:1]
+        ),
     )
-    return render(request, "dashboard/dashboard_partial.html", {"dispositivos": dispositivos})
+
+    for d in dispositivos:
+        alertas_cerradas = Alerta.objects.filter(
+            reporte__dispositivo=d, is_activa=False, fecha_desactivada__isnull=False
+        )
+        # --- Promedio total ---
+        tiempos = [(a.fecha_desactivada - a.fecha_alerta).total_seconds()/60 for a in alertas_cerradas]
+        if tiempos:
+            total_seconds = int((sum(tiempos)/len(tiempos)) * 60)
+            d.tiempo_atencion = str(timedelta(seconds=total_seconds))
+        else:
+            d.tiempo_atencion = None
+
+        # --- Promedio diario ---
+        alertas_hoy = alertas_cerradas.filter(fecha_alerta__date=hoy)
+        tiempos_hoy = [(a.fecha_desactivada - a.fecha_alerta).total_seconds()/60 for a in alertas_hoy]
+        if tiempos_hoy:
+            total_seconds_hoy = int((sum(tiempos_hoy)/len(tiempos_hoy)) * 60)
+            d.tiempo_atencion_dia = str(timedelta(seconds=total_seconds_hoy))
+        else:
+            d.tiempo_atencion_dia = None
+
+    return render(request, "dashboard/dashboard.html", {"dispositivos": dispositivos})
+
 
 # Endpoint para recibir información enviada desde el ESP32
 @csrf_exempt  # Deshabilita CSRF para este endpoint
@@ -118,3 +169,51 @@ def logout_view(request):
     logout(request)  # Cierra sesión del usuario
     request.session.flush()  # Limpia la sesión
     return redirect('/login/')  # Redirige al login
+
+# Nueva función para calcular el promedio de tiempo de atención de alertas
+from django.utils.timezone import now
+from django.http import JsonResponse
+
+@login_required
+def promedio_tiempo_alertas(request):
+    """
+    Devuelve el promedio de tiempo de atención de alertas en dos versiones:
+    - promedio_tiempo_alertas_min: promedio general acumulado.
+    - promedio_tiempo_alertas_dia_min: promedio solo del día actual.
+    """
+    # --- Promedio general ---
+    alertas_cerradas = (
+        Alerta.objects.filter(is_activa=False, fecha_desactivada__isnull=False)
+        .select_related("reporte__dispositivo")
+    )
+
+    tiempos_total = {}
+    for alerta in alertas_cerradas:
+        dispositivo_id = alerta.reporte.dispositivo.id
+        t_min = (alerta.fecha_desactivada - alerta.fecha_alerta).total_seconds() / 60
+        tiempos_total.setdefault(dispositivo_id, []).append(t_min)
+
+    promedios_total = {
+        d: round(sum(tiempos) / len(tiempos), 2)
+        for d, tiempos in tiempos_total.items()
+    }
+
+    # --- Promedio solo del día actual ---
+    hoy = now().date()
+    alertas_hoy = alertas_cerradas.filter(fecha_alerta__date=hoy)
+
+    tiempos_hoy = {}
+    for alerta in alertas_hoy:
+        dispositivo_id = alerta.reporte.dispositivo.id
+        t_min = (alerta.fecha_desactivada - alerta.fecha_alerta).total_seconds() / 60
+        tiempos_hoy.setdefault(dispositivo_id, []).append(t_min)
+
+    promedios_hoy = {
+        d: round(sum(tiempos) / len(tiempos), 2)
+        for d, tiempos in tiempos_hoy.items()
+    }
+
+    return JsonResponse({
+        "promedio_tiempo_alertas_min": promedios_total,
+        "promedio_tiempo_alertas_dia_min": promedios_hoy,
+    })

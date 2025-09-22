@@ -1,30 +1,78 @@
 {% load static %}
 
-{% for dispositivo in dispositivos %}
-<div class="bg-gray-200 dark:bg-gray-800 rounded-2xl shadow border-black-900 p-8 
-            transition hover:shadow-lg transform hover:scale-105 duration-200
-            {% if dispositivo.ultimo_nivel >= 75 %}animate-pulse border-red-600{% endif %}"
-     data-device-id="{{ dispositivo.id }}">
-  
-  <h2 class="text-xl font-bold {% if dispositivo.ultimo_nivel >= 75 %}text-red-600{% else %}text-gray-800 dark:text-gray-100{% endif %} mb-2">
-    Contenedor: {{ dispositivo.device_name }}
-  </h2>
+{% if dispositivos %}
+<table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+  <thead class="bg-gray-200 dark:bg-gray-800">
+    <tr>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Contenedor</th>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Nivel</th>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Última actualización</th>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Estado de la puerta</th>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Promedio atención alertas</th>
+      <th class="px-6 py-3 text-left text-sm font-semibold text-gray-800 dark:text-gray-200">Acciones</th>
+    </tr>
+  </thead>
+  <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+    {% for dispositivo in dispositivos %}
+    <tr class="
+      transition duration-200 
+      {% if dispositivo.ultimo_nivel >= 75 %}
+        bg-red-200 dark:bg-yellow-800 animate-pulse
+      {% else %}
+        hover:bg-gray-100 dark:hover:bg-gray-800
+      {% endif %}
+    " data-device-id="{{ dispositivo.id }}">
+      
+      <!-- Contenedor -->
+      <td class="px-6 py-4 whitespace-nowrap font-bold 
+                 {% if dispositivo.ultimo_nivel >= 75 %}text-white-600{% else %}text-gray-800 dark:text-gray-100{% endif %}">
+        {{ dispositivo.device_name }}
+      </td>
 
-  <p class="text-gray-600 dark:text-gray-300">
-    Nivel: <span class="font-semibold {% if dispositivo.ultimo_nivel >= 75 %}text-red-900{% endif %}">
-      {{ dispositivo.ultimo_nivel }}%
-    </span>
-  </p>
+      <!-- Nivel -->
+      <td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+        <span class="font-semibold {% if dispositivo.ultimo_nivel >= 75 %}text-white-900{% endif %}">
+          {{ dispositivo.ultimo_nivel }}%
+        </span>
+      </td>
 
-  <p class="text-gray-600 dark:text-gray-300">
-    Última actualización: {{ dispositivo.ultima_fecha|date:"d M Y, h:i a" }}
-  </p>
+      <!-- Última actualización -->
+      <td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+        {{ dispositivo.ultima_fecha|date:"d M Y, h:i a" }}
+      </td>
 
-  <a href="{% url 'detalle_contenedor' dispositivo.id %}" 
-     class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-     Ver más
-  </a>
-</div>
-{% empty %}
+      <!-- Estado de la puerta -->
+      <td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+        {% if dispositivo.estado_actual_puerta %}
+          <span class="text-green-600 font-semibold">Cerrada</span>
+        {% else %}
+          <span class="text-red-800 font-semibold">Abierta</span>
+        {% endif %}
+      </td>
+
+      <!-- Promedio de Tiempo de atención de alertas (general y del día) -->
+      <td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">
+        {% if dispositivo.tiempo_atencion %}
+          {{ dispositivo.tiempo_atencion }}
+          {% if dispositivo.tiempo_atencion_dia %}
+            <span class="block text-xs text-gray-400">Hoy: {{ dispositivo.tiempo_atencion_dia }}</span>
+          {% endif %}
+        {% else %}
+          —
+        {% endif %}
+      </td>
+
+      <!-- Acciones -->
+      <td class="px-6 py-4 whitespace-nowrap">
+        <a href="{% url 'detalle_contenedor' dispositivo.id %}"
+           class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Ver más
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
 <p class="text-gray-600 dark:text-gray-300">No hay dispositivos registrados.</p>
-{% endfor %}
+{% endif %}
