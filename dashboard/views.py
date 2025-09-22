@@ -144,8 +144,8 @@ def reporte_ESP32(request):
                         is_activa=True
                     )
             else:
-                # Si hay alerta activa y el nivel bajó, desactivarla
-                if alerta_activa:
+                # Si hay alerta activa y el nivel llega a 0, desactivarla
+                if alerta_activa and medida_nivel == 0:
                     alerta_activa.is_activa = False
                     alerta_activa.fecha_desactivada = timezone.now()
                     alerta_activa.save()
