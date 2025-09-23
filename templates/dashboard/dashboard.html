@@ -80,7 +80,7 @@
 
     <div id="contenedores" hx-get="{% url 'dashboard_partial' %}" hx-trigger="every 5s" hx-target="#contenedores-inner"
       hx-swap="innerHTML" class="flex flex-wrap gap-6 mt-10">
-      <div id="contenedores-inner" class="flex flex-wrap gap-6">
+      <div id="contenedores-inner" class="flex flex-wrap gap-6 w-[80vw]">
         {% include "dashboard/dashboard_partial.html" %}
       </div>
     </div>
